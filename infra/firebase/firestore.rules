@@ -1,0 +1,296 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userExists() {
+      return signedIn() && userDoc().data != null;
+    }
+
+    function isActiveUser() {
+      return userExists() &&
+        (!('status' in userDoc().data) || userDoc().data.status == 'active');
+    }
+
+    function roles() {
+      return userExists() ? userDoc().data.roles : [];
+    }
+
+    function orgIds() {
+      return userExists() ? userDoc().data.organization_ids : [];
+    }
+
+    function hasRole(role) {
+      return isActiveUser() && role in roles();
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isCoordinator() {
+      return hasRole('coordinator') || isAdmin();
+    }
+
+    function isFieldAgent() {
+      return hasRole('field_agent');
+    }
+
+    function isVolunteer() {
+      return hasRole('volunteer');
+    }
+
+    function sameOrg(orgId) {
+      return isActiveUser() && orgId in orgIds();
+    }
+
+    function canReadOrgResource() {
+      return signedIn() && sameOrg(resource.data.organization_id);
+    }
+
+    function canCreateOrgResource() {
+      return signedIn() && sameOrg(request.resource.data.organization_id);
+    }
+
+    function validLanguage(code) {
+      return code in ['en', 'hi', 'mr'];
+    }
+
+    function validLocation(location) {
+      return location is map &&
+        location.lat is number &&
+        location.lng is number &&
+        location.address_text is string;
+    }
+
+    function immutableKeysPreserved(keys) {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly(keys);
+    }
+
+    function validRoleList(roleList) {
+      return roleList is list &&
+        roleList.hasOnly(['coordinator', 'field_agent', 'volunteer', 'admin']);
+    }
+
+    function validSelfUserDoc(uid) {
+      return request.auth.uid == uid &&
+        request.resource.data.display_name is string &&
+        request.resource.data.email is string &&
+        request.resource.data.organization_ids is list &&
+        request.resource.data.organization_ids.hasAll(['guardians']) &&
+        validRoleList(request.resource.data.roles) &&
+        request.resource.data.active_role in request.resource.data.roles &&
+        validLanguage(request.resource.data.preferred_language);
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() &&
+        (
+          request.auth.uid == uid ||
+          (resource.data.organization_ids is list &&
+            resource.data.organization_ids.hasAny(orgIds()))
+        );
+
+      allow create: if signedIn() && validSelfUserDoc(uid);
+
+      allow update: if signedIn() && (
+        isAdmin() ||
+        (
+          validSelfUserDoc(uid)
+        )
+      );
+
+      allow delete: if false;
+    }
+
+    match /organizations/{organizationId} {
+      allow read: if sameOrg(organizationId);
+      allow write: if isAdmin() && sameOrg(organizationId);
+    }
+
+    match /field_agents/{uid} {
+      allow read: if canReadOrgResource();
+      allow create: if canCreateOrgResource() &&
+        (isCoordinator() || request.auth.uid == uid);
+      allow update: if canReadOrgResource() && (
+        isCoordinator() ||
+        (
+          request.auth.uid == uid &&
+          immutableKeysPreserved([
+            'display_name',
+            'phone',
+            'device_last_seen_at',
+            'app_version',
+            'sync_health',
+            'assigned_regions',
+            'organization_id'
+          ])
+        )
+      );
+      allow delete: if isAdmin() && canReadOrgResource();
+    }
+
+    match /volunteers/{uid} {
+      allow read: if canReadOrgResource();
+      allow create: if canCreateOrgResource() &&
+        (isCoordinator() || request.auth.uid == uid);
+      allow update: if canReadOrgResource() && (
+        isCoordinator() ||
+        (
+          request.auth.uid == uid &&
+          immutableKeysPreserved([
+            'name',
+            'phone',
+            'languages',
+            'availability_status',
+            'current_task_count',
+            'home_location',
+            'service_radius_km',
+            'last_active_at',
+            'organization_id',
+            'email',
+            'skills'
+          ])
+        )
+      );
+      allow delete: if isAdmin() && canReadOrgResource();
+    }
+
+    match /needs/{needId} {
+      allow read: if canReadOrgResource();
+
+      allow create: if canCreateOrgResource() &&
+        (isFieldAgent() || isCoordinator()) &&
+        request.resource.data.created_by == request.auth.uid &&
+        request.resource.data.title is string &&
+        request.resource.data.description is string &&
+        request.resource.data.need_type is string &&
+        request.resource.data.urgency_input is number &&
+        request.resource.data.people_affected is number &&
+        request.resource.data.preferred_language is string &&
+        request.resource.data.consent_captured is bool &&
+        request.resource.data.review_required is bool &&
+        request.resource.data.verification_status is string &&
+        request.resource.data.status == 'open' &&
+        validLanguage(request.resource.data.preferred_language) &&
+        validLocation(request.resource.data.location);
+
+      allow update: if canReadOrgResource() && (
+        isCoordinator() ||
+        (
+          isFieldAgent() &&
+          resource.data.created_by == request.auth.uid &&
+          resource.data.status in ['open', 'triaged'] &&
+          request.resource.data.organization_id == resource.data.organization_id &&
+          request.resource.data.created_by == resource.data.created_by &&
+          immutableKeysPreserved([
+            'title',
+            'description',
+            'need_type',
+            'urgency_input',
+            'people_affected',
+            'beneficiary_name',
+            'beneficiary_phone',
+            'preferred_language',
+            'consent_captured',
+            'review_required',
+            'verification_status',
+            'location',
+            'vulnerability_tags',
+            'updated_at'
+          ]) &&
+          validLanguage(request.resource.data.preferred_language) &&
+          validLocation(request.resource.data.location)
+        ) ||
+        (
+          isVolunteer() &&
+          resource.data.assigned_volunteer_id == request.auth.uid &&
+          request.resource.data.organization_id == resource.data.organization_id &&
+          request.resource.data.created_by == resource.data.created_by &&
+          immutableKeysPreserved([
+            'status',
+            'updated_at',
+            'assigned_task_id',
+            'assigned_volunteer_id'
+          ]) &&
+          request.resource.data.status in ['open', 'in_progress', 'resolved']
+        )
+      );
+
+      allow delete: if isAdmin() && canReadOrgResource();
+
+      match /{document=**} {
+        allow read: if sameOrg(get(/databases/$(database)/documents/needs/$(needId)).data.organization_id);
+        allow write: if isCoordinator() &&
+          sameOrg(get(/databases/$(database)/documents/needs/$(needId)).data.organization_id);
+      }
+    }
+
+    match /tasks/{taskId} {
+      allow read: if canReadOrgResource();
+
+      allow create: if isCoordinator() &&
+        canCreateOrgResource() &&
+        request.resource.data.need_id is string &&
+        request.resource.data.volunteer_id is string &&
+        request.resource.data.assigned_by == request.auth.uid &&
+        request.resource.data.status == 'offered';
+
+      allow update: if canReadOrgResource() && (
+        isCoordinator() ||
+        (
+          isVolunteer() &&
+          resource.data.volunteer_id == request.auth.uid &&
+          request.resource.data.organization_id == resource.data.organization_id &&
+          request.resource.data.need_id == resource.data.need_id &&
+          request.resource.data.volunteer_id == resource.data.volunteer_id &&
+          request.resource.data.assigned_by == resource.data.assigned_by &&
+          immutableKeysPreserved([
+            'status',
+            'completion_notes',
+            'completed_at',
+            'accepted_at',
+            'organization_id',
+            'need_id',
+            'volunteer_id',
+            'assigned_by',
+            'need_title',
+            'volunteer_name',
+            'scheduled_for',
+            'created_at'
+          ]) &&
+          request.resource.data.status in ['accepted', 'in_progress', 'completed', 'declined']
+        )
+      );
+
+      allow delete: if isAdmin() && canReadOrgResource();
+    }
+
+    match /ingestion_events/{eventId} {
+      allow read: if canReadOrgResource();
+      allow create, update: if isCoordinator() && canCreateOrgResource();
+      allow delete: if false;
+    }
+
+    match /events/{eventId} {
+      allow read: if canReadOrgResource();
+      allow create: if signedIn() &&
+        sameOrg(request.resource.data.organization_id) &&
+        request.resource.data.summary is string &&
+        request.resource.data.event_type is string;
+      allow update, delete: if false;
+    }
+
+    match /reports/{reportId} {
+      allow read: if canReadOrgResource();
+      allow create, update: if isCoordinator() && canCreateOrgResource();
+      allow delete: if isAdmin() && canReadOrgResource();
+    }
+  }
+}

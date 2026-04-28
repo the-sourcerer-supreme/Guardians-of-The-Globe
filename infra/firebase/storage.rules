@@ -1,0 +1,45 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return firestore.get(
+        /databases/(default)/documents/users/$(request.auth.uid)
+      );
+    }
+
+    function userExists() {
+      return signedIn() && userDoc().data != null;
+    }
+
+    function orgIds() {
+      return userExists() ? userDoc().data.organization_ids : [];
+    }
+
+    function roles() {
+      return userExists() ? userDoc().data.roles : [];
+    }
+
+    function sameOrg(orgId) {
+      return userExists() && orgId in orgIds();
+    }
+
+    function canManageNeedMedia(orgId) {
+      return sameOrg(orgId) &&
+        roles().hasAny(['admin', 'coordinator', 'field_agent']);
+    }
+
+    match /organizations/{organizationId}/needs/{needId}/{allPaths=**} {
+      allow read: if canManageNeedMedia(organizationId);
+      allow write: if canManageNeedMedia(organizationId);
+    }
+
+    match /organizations/{organizationId}/profiles/{uid}/{allPaths=**} {
+      allow read: if sameOrg(organizationId) && request.auth.uid == uid;
+      allow write: if sameOrg(organizationId) && request.auth.uid == uid;
+    }
+  }
+}

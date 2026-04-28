@@ -1,0 +1,28 @@
+{
+  "firestore": {
+    "rules": "infra/firebase/firestore.rules",
+    "indexes": "infra/firebase/firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "infra/firebase/storage.rules"
+  },
+  "hosting": {
+    "public": "apps/coordinator-dashboard/dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "functions": [
+    {
+      "source": "services/cloud-functions"
+    }
+  ]
+}

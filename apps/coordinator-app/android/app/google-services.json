@@ -1,0 +1,121 @@
+{
+  "project_info": {
+    "project_number": "790389538355",
+    "project_id": "guardians-of-the-globe-41a1f",
+    "storage_bucket": "guardians-of-the-globe-41a1f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:790389538355:android:0d744ea2bb6a64e0022d46",
+        "android_client_info": {
+          "package_name": "com.example.guardians_coordinator_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "790389538355-ipv340s4hlpindhc5f8m2ju5iuf473uo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.guardians_coordinator_app",
+            "certificate_hash": "f04d2b9383d5281e0352a2b30c96e2c8d758eb1d"
+          }
+        },
+        {
+          "client_id": "790389538355-v5s2mepr1dd7qd14h36v75gcuvhf271q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzy6rQZNwnqVIHz3l4mS4NECvtT6FOZqU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "790389538355-v5s2mepr1dd7qd14h36v75gcuvhf271q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:790389538355:android:b4d8033bf0afc20e022d46",
+        "android_client_info": {
+          "package_name": "com.example.guardians_field_agent"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "790389538355-165svoprj759m1ekbp5rue4ktekof80p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.guardians_field_agent",
+            "certificate_hash": "f04d2b9383d5281e0352a2b30c96e2c8d758eb1d"
+          }
+        },
+        {
+          "client_id": "790389538355-v5s2mepr1dd7qd14h36v75gcuvhf271q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzy6rQZNwnqVIHz3l4mS4NECvtT6FOZqU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "790389538355-v5s2mepr1dd7qd14h36v75gcuvhf271q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:790389538355:android:1933bbf951e327c2022d46",
+        "android_client_info": {
+          "package_name": "com.example.guardians_volunteer_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "790389538355-tfgfoi28p5pu7bhul9gjrmk7c3oqnsko.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.guardians_volunteer_app",
+            "certificate_hash": "f04d2b9383d5281e0352a2b30c96e2c8d758eb1d"
+          }
+        },
+        {
+          "client_id": "790389538355-v5s2mepr1dd7qd14h36v75gcuvhf271q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzy6rQZNwnqVIHz3l4mS4NECvtT6FOZqU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "790389538355-v5s2mepr1dd7qd14h36v75gcuvhf271q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
